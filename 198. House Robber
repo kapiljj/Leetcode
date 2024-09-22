@@ -1,0 +1,9 @@
+class Solution:
+    def rob(self, nums: List[int]) -> int:
+        n = len(nums)
+        pre, cur = 0, 0
+        for i in range(n):
+            temp = max(pre + nums[i], cur)
+            pre = cur
+            cur = temp
+        return cur
