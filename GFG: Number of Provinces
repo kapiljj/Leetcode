@@ -1,0 +1,18 @@
+class Solution:
+    def numProvinces(self, adj, V):
+        # code here 
+        def dfs(graph,vit,node):
+            for i in range(len(graph)):
+                if graph[node][i]==1 and vit[i]==False:
+                    vit[i]=True
+                    dfs(graph,vit,i)
+                    
+        vit=[False]*V
+        sum=0
+        
+        for i in range(V):
+            if vit[i]==False:
+                dfs(adj,vit,i)
+                sum+=1
+                
+        return sum
