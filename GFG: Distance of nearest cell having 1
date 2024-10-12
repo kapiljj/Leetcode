@@ -1,0 +1,45 @@
+class Solution:
+
+    #Function to find distance of nearest 1 in the grid for each cell.
+    def nearest(self, grid):
+	    n = len(grid)
+        m = len(grid[0])
+        
+        # Initialize answer grid with 0s
+        ans = [[0 for i in range(m)] for _ in range(n)]
+        
+        # Iterate through all cells in the grid
+        for i in range(n):
+            for j in range(m):
+                # If the cell already contains a 1, skip it
+                if grid[i][j] == 1:
+                    continue
+                # Use BFS to find the nearest 1 and assign it to ans[i][j]
+                ans[i][j] = self.bfs(grid, i, j, n, m)
+        
+        return ans
+
+    # BFS helper function to find the distance to the nearest 1
+    def bfs(self, grid, x, y, n, m):
+        # Initialize the queue with the starting point
+        q = [(x, y, 0)]
+        # Set to keep track of visited cells
+        done = set()
+        
+        while q:
+            i, j, dist = q.pop(0)
+            # If we reach a cell with 1, return the distance
+            if grid[i][j] == 1:
+                return dist
+            # Explore the four possible directions (up, down, left, right)
+            dxdy = [(1, 0), (-1, 0), (0, -1), (0, 1)]
+            for dx, dy in dxdy:
+                nx = i + dx
+                ny = j + dy
+                # Ensure the new coordinates are within the grid boundaries
+                if 0 <= nx < n and 0 <= ny < m and (nx, ny) not in done:
+                    done.add((nx, ny))  # Mark the cell as visited
+                    q.append((nx, ny, dist + 1))
+        
+        # If no 1 is found, return -1 (though this case shouldn't normally occur)
+        return -1
