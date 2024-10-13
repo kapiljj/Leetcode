@@ -1,0 +1,33 @@
+from typing import List
+from collections import deque
+
+class Solution:
+    def numberOfEnclaves(self, grid: List[List[int]]) -> int:
+        m, n = len(grid), len(grid[0])
+        q = deque()
+        vis = set()
+        
+        # Add all boundary 1's to the queue and mark them visited
+        for i in range(m):
+            for j in range(n):
+                if (i == 0 or i == m-1 or j == 0 or j == n-1) and grid[i][j] == 1:
+                    q.append((i, j))
+                    vis.add((i, j))
+        
+        # BFS to mark all reachable 1's from the boundary
+        while q:
+            x, y = q.popleft()
+            for dx, dy in [(-1, 0), (1, 0), (0, 1), (0, -1)]:
+                nx, ny = x + dx, y + dy
+                if 0 <= nx < m and 0 <= ny < n and grid[nx][ny] == 1 and (nx, ny) not in vis:
+                    q.append((nx, ny))
+                    vis.add((nx, ny))
+        
+        # Count the remaining enclaves (1's not visited)
+        cnt = 0
+        for i in range(m):
+            for j in range(n):
+                if grid[i][j] == 1 and (i, j) not in vis:
+                    cnt += 1
+        
+        return cnt
