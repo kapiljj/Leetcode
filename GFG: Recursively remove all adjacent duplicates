@@ -1,0 +1,48 @@
+class Solution:
+    def rremove (self, S):
+		#checks base case
+		if not S:
+		    
+		    return S
+		
+		new_S = ""
+		
+		Flag = False
+		
+		
+		ln = len(S)
+		
+		
+		
+		#itrate through the string checks both it next and previous elements 
+		#if found same it skips that element
+		for ind in range(ln):
+		    
+		    if ind > 0 and S[ind-1] == S[ind]:
+		        
+		        Flag = True
+		        
+		        continue
+		    
+		    elif ind < ln-1 and S[ind] == S[ind+1]:
+		        
+		        Flag = True
+		        
+		        continue
+		    
+		        
+		    else:
+		        
+		        new_S += S[ind]
+		        
+		        
+		#if any kind of dup is found so there is chance of finding new once after removing
+		#old elements so we retrace the path again for the new string to make sure no
+		# dups are remaining
+		if Flag:
+		    
+		    return self.rremove(new_S)
+		    
+		else:
+		    
+		    return S
