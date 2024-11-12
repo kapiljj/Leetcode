@@ -1,0 +1,5 @@
+class Solution:
+    def addBinary(self, a: str, b: str) -> str:
+        return bin(int(a, 2) + int(b, 2))[2:]
+
+#here the int(a,2) converts the binary string into a decimal for both a and b, and then bin funtion coverts them again to binary(all this happens by taking the base as two)
