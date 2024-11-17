@@ -1,0 +1,13 @@
+class Solution:
+    def searchInsert(self, arr: List[int], X: int) -> int:
+        l,r=0,len(arr)-1
+        while r>=l:
+            m=(l+r)//2
+            if arr[m]>X:
+                r=m-1
+            elif arr[m]<X:
+                l=m+1
+
+            else:
+                return m
+        return l
