@@ -1,0 +1,32 @@
+import requests
+from bs4 import BeautifulSoup
+
+def scrape_olx_car_covers():
+    url = "https://www.olx.in/items/q-car-cover"
+    headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36"}
+    response = requests.get(url, headers=headers)
+    
+    if response.status_code != 200:
+        print("Failed to fetch the OLX page.")
+        return
+    
+    soup = BeautifulSoup(response.text, "html.parser")
+    items = soup.find_all("li", class_="EIR5N")
+    
+    results = []
+    for item in items:
+        title = item.find("span", class_="_2tW1I").text if item.find("span", class_="_2tW1I") else "No title"
+        price = item.find("span", class_="_89yzn").text if item.find("span", class_="_89yzn") else "No price"
+        location = item.find("span", class_="tjgMj").text if item.find("span", class_="tjgMj") else "No location"
+        link = "https://www.olx.in" + item.find("a", class_="fhlkh")["href"] if item.find("a", class_="fhlkh") else "No link"
+        
+        results.append(f"Title: {title}\nPrice: {price}\nLocation: {location}\nLink: {link}\n")
+    
+    # Save to a file
+    with open("olx_car_covers.txt", "w", encoding="utf-8") as file:
+        file.writelines("\n\n".join(results))
+    
+    print("Scraping completed! Results saved to 'olx_car_covers.txt'.")
+
+# Run the scraper
+scrape_olx_car_covers()
