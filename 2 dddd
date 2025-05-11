@@ -1,0 +1,17 @@
+#!/bin/bash
+
+# Define the URL and output file
+URL="https://www.amfiindia.com/spages/NAVAll.txt"
+OUTPUT_JSON="amfi_data.json"
+
+# Download the file using curl
+curl -s "$URL" -o nav_data.txt
+
+# Convert data to JSON format
+echo "[" > "$OUTPUT_JSON"
+awk -F';' 'NR > 1 && NF >= 5 {printf "{\042Scheme Name\042: \042%s\042, \042Asset Value\042: \042%s\042},\n", $4, $5}' nav_data.txt >> "$OUTPUT_JSON"
+sed -i '$ s/,$//' "$OUTPUT_JSON"
+echo "]" >> "$OUTPUT_JSON"
+
+# Inform the user
+echo "Data extracted and saved to $OUTPUT_JSON."
