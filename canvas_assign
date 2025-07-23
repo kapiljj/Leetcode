@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Canvas Image Cropping with Upload & Presets</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            background-color: #f0f2f5;
+            color: #333;
+            line-height: 1.6;
+            margin: 0;
+        }
+        h1, h2 {
+            color: #2c3e50;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+        .image-container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 30px;
+            margin-top: 20px;
+            width: 100%;
+            max-width: 900px;
+        }
+        .image-box {
+            background-color: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            text-align: center;
+            flex: 1 1 45%;
+            min-width: 300px;
+            box-sizing: border-box;
+            position: relative;
+        }
+        img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            margin-top: 15px;
+            display: block;
+            user-select: none;
+            -webkit-user-drag: none;
+        }
+        canvas {
+            border: 3px dashed #007bff;
+            background-color: #e9f5ff;
+            max-width: 100%;
+            height: auto;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            margin-top: 15px;
+        }
+        .info-box {
+            background-color: #e0f7fa;
+            border-left: 5px solid #00bcd4;
+            padding: 15px;
+            margin-top: 30px;
+            margin-bottom: 20px;
+            border-radius: 8px;
+            width: 100%;
+            max-width: 700px;
+        }
+        .info-box p {
+            margin: 0;
+            font-size: 0.95em;
+            color: #00796b;
+        }
+        .crop-selection {
+            position: absolute;
+            border: 2px solid #ff0000;
+            background-color: rgba(255, 0, 0, 0.1);
+            cursor: crosshair;
+            display: none;
+            z-index: 10;
+        }
+        .controls-section {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+            width: 100%;
+            max-width: 700px;
+            margin-bottom: 20px;
+        }
+        .action-buttons, .preset-buttons {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        .button-style {
+            background-color: #007bff;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1em;
+            box-shadow: 0 4px 10px rgba(0, 123, 255, 0.2);
+            transition: background-color 0.3s ease, transform 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        .button-style:hover {
+            background-color: #0056b3;
+            transform: translateY(-2px);
+        }
+        .button-style:active {
+            transform: translateY(0);
+        }
+        #cropButton {
+            background-color: #28a745;
+            box-shadow: 0 4px 10px rgba(40, 167, 69, 0.2);
+        }
+        #cropButton:hover {
+            background-color: #218838;
+        }
+        .preset-buttons .button-style {
+            background-color: #6c757d;
+            box-shadow: 0 4px 10px rgba(108, 117, 125, 0.2);
+        }
+        .preset-buttons .button-style:hover {
+            background-color: #5a6268;
+        }
+    </style>
+</head>
+<body>
+    <h1>Interactive Canvas Image Cropping with Upload & Presets 🖼️</h1>
+
+    <div class="controls-section">
+        <div class="action-buttons">
+            <label for="imageUpload" class="button-style">
+                Upload Image
+                <input type="file" id="imageUpload" accept="image/*" style="display: none;">
+            </label>
+            <button id="cropButton" class="button-style" style="display: none;">Crop Image</button>
+        </div>
+
+        <div class="preset-buttons">
+            <button id="presetSquare" class="button-style">Square (1:1) 🔲</button>
+            <button id="presetLandscape" class="button-style">Landscape (16:9) 🏞️</button>
+            <button id="presetPortrait" class="button-style">Portrait (9:16) 📱</button>
+        </div>
+    </div>
+
+
+    <div class="image-container">
+        <div class="image-box">
+            <h2>Original Image (Click & Drag or Use Presets)</h2>
+            <img id="sourceImage" src="https://placehold.co/600x400/87CEEB/FFFFFF?text=Upload+or+Drag" alt="Original Image">
+            <div id="cropSelection" class="crop-selection"></div>
+            <p>Click and drag or use the preset buttons to define your crop area.</p>
+        </div>
+
+        <div class="image-box">
+            <h2>Cropped Output</h2>
+            <canvas id="croppedCanvas" width="300" height="200"></canvas>
+            <p>The cropped section will appear here after you click "Crop Image".</p>
+        </div>
+    </div>
+
+    <div class="info-box">
+        
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const sourceImage = document.getElementById('sourceImage');
+            const croppedCanvas = document.getElementById('croppedCanvas');
+            const context = croppedCanvas.getContext('2d');
+            const cropSelection = document.getElementById('cropSelection');
+            const cropButton = document.getElementById('cropButton');
+            const imageUpload = document.getElementById('imageUpload');
+            const presetSquareBtn = document.getElementById('presetSquare');
+            const presetLandscapeBtn = document.getElementById('presetLandscape');
+            const presetPortraitBtn = document.getElementById('presetPortrait');
+
+            let isDrawing = false;
+            let startX, startY;
+            let currentCrop = { x: 0, y: 0, width: 0, height: 0 };
+
+            function resetCroppingState() {
+                clearCanvas();
+                cropSelection.style.display = 'none';
+                cropButton.style.display = 'none';
+                currentCrop = { x: 0, y: 0, width: 0, height: 0 };
+            }
+
+            function clearCanvas() {
+                context.clearRect(0, 0, croppedCanvas.width, croppedCanvas.height);
+            }
+
+            function updateCropSelectionStyle() {
+                cropSelection.style.left = `${currentCrop.x}px`;
+                cropSelection.style.top = `${currentCrop.y}px`;
+                cropSelection.style.width = `${currentCrop.width}px`;
+                cropSelection.style.height = `${currentCrop.height}px`;
+            }
+
+            sourceImage.addEventListener('mousedown', (e) => {
+                isDrawing = true;
+                const rect = sourceImage.getBoundingClientRect();
+                startX = e.clientX - rect.left;
+                startY = e.clientY - rect.top;
+
+                currentCrop.x = startX;
+                currentCrop.y = startY;
+                currentCrop.width = 0;
+                currentCrop.height = 0;
+
+                cropSelection.style.display = 'block';
+                updateCropSelectionStyle();
+            });
+
+            sourceImage.addEventListener('mousemove', (e) => {
+                if (!isDrawing) return;
+
+                const rect = sourceImage.getBoundingClientRect();
+                const currentX = e.clientX - rect.left;
+                const currentY = e.clientY - rect.top;
+
+                const width = currentX - startX;
+                const height = currentY - startY;
+
+                currentCrop.x = Math.min(startX, currentX);
+                currentCrop.y = Math.min(startY, currentY);
+                currentCrop.width = Math.abs(width);
+                currentCrop.height = Math.abs(height);
+
+                updateCropSelectionStyle();
+            });
+
+            sourceImage.addEventListener('mouseup', () => {
+                isDrawing = false;
+                if (currentCrop.width > 0 && currentCrop.height > 0) {
+                    cropButton.style.display = 'block';
+                } else {
+                    cropButton.style.display = 'none';
+                    cropSelection.style.display = 'none';
+                }
+            });
+
+            sourceImage.addEventListener('mouseleave', () => {
+                isDrawing = false;
+                if (currentCrop.width < 5 || currentCrop.height < 5) {
+                    cropSelection.style.display = 'none';
+                    cropButton.style.display = 'none';
+                }
+            });
+
+            cropButton.addEventListener('click', () => {
+                if (!sourceImage.complete || currentCrop.width === 0 || currentCrop.height === 0) {
+                    console.warn('Image not loaded or no valid crop selection.');
+                    return;
+                }
+
+                clearCanvas();
+
+                const scaleX = sourceImage.naturalWidth / sourceImage.clientWidth;
+                const scaleY = sourceImage.naturalHeight / sourceImage.clientHeight;
+
+                const sourceX = currentCrop.x * scaleX;
+                const sourceY = currentCrop.y * scaleY;
+                const sourceWidth = currentCrop.width * scaleX;
+                const sourceHeight = currentCrop.height * scaleY;
+
+                const finalSourceX = Math.max(0, Math.min(sourceX, sourceImage.naturalWidth - 1));
+                const finalSourceY = Math.max(0, Math.min(sourceY, sourceImage.naturalHeight - 1));
+                const finalSourceWidth = Math.min(sourceWidth, sourceImage.naturalWidth - finalSourceX);
+                const finalSourceHeight = Math.min(sourceHeight, sourceImage.naturalHeight - finalSourceY);
+
+                context.drawImage(
+                    sourceImage,
+                    finalSourceX, finalSourceY, finalSourceWidth, finalSourceHeight,
+                    0, 0, croppedCanvas.width, croppedCanvas.height
+                );
+
+                console.log('Image cropped and displayed.');
+                resetCroppingState();
+            });
+
+            imageUpload.addEventListener('change', (event) => {
+                const file = event.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        sourceImage.src = e.target.result;
+                    };
+                    reader.onerror = () => {
+                        console.error('Error reading file.');
+                    };
+                    reader.readAsDataURL(file);
+                }
+            });
+
+            function applyPresetCrop(aspectRatioWidth, aspectRatioHeight) {
+                if (!sourceImage.complete) {
+                    console.warn('Image not loaded yet. Cannot apply preset.');
+                    return;
+                }
+
+                const naturalImageWidth = sourceImage.naturalWidth;
+                const naturalImageHeight = sourceImage.naturalHeight;
+
+                const displayedImageWidth = sourceImage.clientWidth;
+                const displayedImageHeight = sourceImage.clientHeight;
+
+                let presetWidth, presetHeight;
+
+                const imageAspectRatio = naturalImageWidth / naturalImageHeight;
+                const presetAspectRatio = aspectRatioWidth / aspectRatioHeight;
+
+                if (imageAspectRatio > presetAspectRatio) {
+                    presetHeight = naturalImageHeight;
+                    presetWidth = presetHeight * presetAspectRatio;
+                } else {
+                    presetWidth = naturalImageWidth;
+                    presetHeight = presetWidth / presetAspectRatio;
+                }
+                
+                const scaleFactorX = displayedImageWidth / naturalImageWidth;
+                const scaleFactorY = displayedImageHeight / naturalImageHeight;
+
+                const displayedPresetWidth = presetWidth * scaleFactorX;
+                const displayedPresetHeight = presetHeight * scaleFactorY;
+
+                currentCrop.x = (displayedImageWidth - displayedPresetWidth) / 2;
+                currentCrop.y = (displayedImageHeight - displayedPresetHeight) / 2;
+                currentCrop.width = displayedPresetWidth;
+                currentCrop.height = displayedPresetHeight;
+
+                currentCrop.x = Math.max(0, Math.floor(currentCrop.x));
+                currentCrop.y = Math.max(0, Math.floor(currentCrop.y));
+                currentCrop.width = Math.min(displayedPresetWidth, displayedImageWidth - currentCrop.x);
+                currentCrop.height = Math.min(displayedPresetHeight, displayedImageHeight - currentCrop.y);
+
+
+                updateCropSelectionStyle();
+                cropSelection.style.display = 'block';
+                cropButton.style.display = 'block';
+                console.log(`Applied preset: ${aspectRatioWidth}:${aspectRatioHeight}`);
+            }
+
+            presetSquareBtn.addEventListener('click', () => applyPresetCrop(1, 1));
+            presetLandscapeBtn.addEventListener('click', () => applyPresetCrop(16, 9));
+            presetPortraitBtn.addEventListener('click', () => applyPresetCrop(9, 16));
+
+            sourceImage.onload = () => {
+                console.log('Original image loaded/changed. Ready for cropping.');
+                resetCroppingState();
+            };
+
+            if (sourceImage.complete) {
+                sourceImage.onload();
+            }
+        });
+    </script>
+</body>
+</html>
